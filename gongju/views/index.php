@@ -114,7 +114,6 @@
                 $( this ).parent( 'label' ).next( 'span' ).removeClass( 'hide' ).find('input' ).eq(0).attr("checked","checked");
             }
         } );
-
         $( ".look-more" ).click( function() {
             var name = $( this ).parents( 'td' ).siblings( '.select-school-name' ).text();
             var dingwei = $( this ).parents( 'td' ).siblings( '.select-school-dingwei' ).text();
