@@ -3,7 +3,7 @@
 <head lang="en">
     <meta charset="UTF-8">
     <title>小工具</title>
-    <link href="res/web/js/bootstrap-3.3.5/css/bootstrap.css" rel="stylesheet">
+    <link href="<?=base_url('res/web/js/bootstrap-3.3.5/css/bootstrap.css')?>" rel="stylesheet">
     <link href="<?=base_url('res/web/css/tip-darkgray/tip-darkgray.css');?>" rel="stylesheet" >
     <script src="<?=base_url('res/web/js/jquery-1.11.1.min.js')?>"></script>
     <script src="<?=base_url('res/web/js/bootstrap.min.js')?>"></script>
@@ -119,7 +119,7 @@
             var dingwei = $( this ).parents( 'td' ).siblings( '.select-school-dingwei' ).text();
             var place = $( this ).parents( 'td' ).siblings( '.select-school-place' ).text();
             $( "#myModalLabel" ).text( name + "," + dingwei + "," + place );
-            $( "#modal-body" ).text( "eeee" );
+            $( "#modal-body" ).text( score );
             $( "#zhuanye-modal" ).modal( 'show' );
         } );
         $( "#college-place-body input" ).change( function() {

@@ -122,6 +122,16 @@ switch (ENVIRONMENT)
  * NO TRAILING SLASH!
  */
 	$application_folder = 'gongju';
+    require_once('site_config.php');
+    $site_name=$_SERVER['HTTP_HOST'];
+    if(isset($site_config)&&is_array($site_config)){
+        if(isset($site_config[$site_name])){
+            $application_folder=$site_config[$site_name];
+        }elseif(isset($site_config['default'])){
+            $application_folder=$site_config['default'];
+        }
+
+    }
 
 /*
  *---------------------------------------------------------------
