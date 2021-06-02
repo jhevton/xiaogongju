@@ -20,15 +20,23 @@ class Welcome extends CI_Controller {
 	 */
 	public function index()
 	{
+        /*$this->load->model('select_model');
+        $list=$this->select_model->test([]);*/
         $this->load->model('select_model');
-        $list=$this->select_model->test([]);
-		$this->load->view('index');
+        $list=$this->select_model->getProvinces([]);
+		$this->load->view('index',['provinces_list'=>$list]);
 	}
     public function getSchoolByType(){
         $school_type = $this->input->post( 'type' );
         $this->load->model('select_model');
         $list=$this->select_model->test(['type'=>$school_type]);
-        echo "eee";
+        p($list);
+    }
+    public function getProvincesName()
+    {
+        $this->load->model('select_model');
+        $list=$this->select_model->getProvinces([]);
+        p($list);
     }
 
 }

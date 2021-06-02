@@ -21,4 +21,8 @@ class Select_model extends CI_Model{
 
         return $this->db->select( )->from( 'school' )->get()->result_array();
     }
+    function getProvinces(array $params)
+    {
+       return $this->db->select( 'id,area_name')->from( 'area' )->where('parent_id',0)->get()->result_array();
+    }
 }

@@ -7,6 +7,7 @@
     <link href="<?=base_url('res/web/css/tip-darkgray/tip-darkgray.css');?>" rel="stylesheet" >
     <script src="<?=base_url('res/web/js/jquery-1.11.1.min.js')?>"></script>
     <script src="<?=base_url('res/web/js/bootstrap.min.js')?>"></script>
+    <script src="<?=base_url('res/web/js/json2.js')?>"></script>
     <script src="<?=base_url('res/web/js/jquery.poshytip.js')?>"></script>
 
 </head>
@@ -126,9 +127,27 @@
             if( $( "#college-place-body input" ).index( $( this ) ) == 0 ) {
                 $( "#college-place-body input" ).attr( "checked", true );
             }
-        } )
+        } );
+        //报考地区
+        var college_place_obj={};
+        $("#college-place-body input" ).change(function(){
+            var tmp_obj= "";
+
+            $("#college-place-body input:checked" ).each(function(i){
+                var value=$(this ).val();
+                if(value!="quanguo"){
+                    tmp_obj+=$(this ).val()+",";
+                }
+            });
+            tmp_obj+=tmp_obj.substring(0,tmp_obj.length-1);
+            college_place_obj=tmp_obj;
+            console.info(college_place_obj);
+        })
         var score_key_value=[];
         var score=0;
+        //选择文理标识
+        var wen_li_tag=0;
+
         $(".score-item" ).change(function(){
             var score_value=0;
             var key=$(this ).attr('name');
@@ -567,68 +586,68 @@
                     <dt id="college-place-title" data-tipso="报考地区必选">报考地区：</dt>
                     <dd id="college-place-body" class="stu-place">
                         <label>
-                            <input type="checkbox" name="college_place" value="北京" aria-label="">全国
+                            <input type="checkbox" name="college_place[]" value="quanguo" aria-label="">全国
                         </label>
                         <br/>
                         <label>
-                            <input type="checkbox" name="college_place" value="北京" aria-label="">北京
+                            <input type="checkbox" name="college_place[]" value="110000" aria-label="">北京
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="上海" aria-label="">上海
+                            <input type="checkbox" name="college_place[]" value="310000">上海
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="江苏" aria-label="">江苏
+                            <input type="checkbox" name="college_place[]" value="320000">江苏
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="浙江" aria-label="">浙江
+                            <input type="checkbox" name="college_place[]" value="330000">浙江
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="天津" aria-label="">天津
+                            <input type="checkbox" name="college_place[]" value="120000" aria-label="">天津
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="广东" aria-label="">广东
+                            <input type="checkbox" name="college_place[]" value="440000" aria-label="">广东
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="湖北" aria-label="">湖北
+                            <input type="checkbox" name="college_place[]" value="420000" aria-label="">湖北
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="湖南" aria-label="">湖南
+                            <input type="checkbox" name="college_place[]" value="430000" aria-label="">湖南
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="" aria-label="">陕西
+                            <input type="checkbox" name="college_place[]" value="610000" aria-label="">陕西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="" aria-label="">四川
+                            <input type="checkbox" name="college_place[]" value="510000" aria-label="">四川
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="重庆" aria-label="">重庆
+                            <input type="checkbox" name="college_place[]" value="500000" aria-label="">重庆
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="西藏" aria-label="">西藏
+                            <input type="checkbox" name="college_place[]" value="540000" aria-label="">西藏
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="广西" aria-label="">广西
+                            <input type="checkbox" name="college_place[]" value="450000" aria-label="">广西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="福建" aria-label="">福建
+                            <input type="checkbox" name="college_place[]" value="350000" aria-label="">福建
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="安徽" aria-label="">安徽
+                            <input type="checkbox" name="college_place[]" value="340000" aria-label="">安徽
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="山东" aria-label="">山东
+                            <input type="checkbox" name="college_place[]" value="370000" aria-label="">山东
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="黑龙江" aria-label="">黑龙江
+                            <input type="checkbox" name="college_place[]" value="230000" aria-label="">黑龙江
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="辽宁" aria-label="">辽宁
+                            <input type="checkbox" name="college_place[]" value="210000" aria-label="">辽宁
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="山西" aria-label="">山西
+                            <input type="checkbox" name="college_place[]" value="140000" aria-label="">山西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place" value="甘肃" aria-label="">甘肃
+                            <input type="checkbox" name="college_place[]" value="620000" aria-label="">甘肃
                         </label>
                     </dd>
                 </dl>
