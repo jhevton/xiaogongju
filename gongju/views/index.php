@@ -5,10 +5,12 @@
     <title>小工具</title>
     <link href="<?=base_url('res/web/js/bootstrap-3.3.5/css/bootstrap.css')?>" rel="stylesheet">
     <link href="<?=base_url('res/web/css/tip-darkgray/tip-darkgray.css');?>" rel="stylesheet" >
+    <link href="<?=base_url('res/web/css/jquery.dataTables.min.css');?>" rel="stylesheet" >
     <script src="<?=base_url('res/web/js/jquery-1.11.1.min.js')?>"></script>
     <script src="<?=base_url('res/web/js/bootstrap.min.js')?>"></script>
     <script src="<?=base_url('res/web/js/json2.js')?>"></script>
     <script src="<?=base_url('res/web/js/jquery.poshytip.js')?>"></script>
+    <script src="<?=base_url('res/web/js/jquery.dataTables.min.js')?>"></script>
 
 </head>
 <style>
@@ -53,6 +55,16 @@
             offsetX         : 100,
             offsetY         : 5
         } );
+        $( '#wenli-title' ).poshytip( {
+            className       : 'tip-darkgray',
+            bgImageFrameSize: 9,
+            content         : '此生源地对应年级的文理必填',
+            alignTo         : 'target',
+            alignX          : 'inner-left',
+            alignY          : 'top',
+            offsetX         : 100,
+            offsetY         : 5
+        } );
         $( ".next-btn" ).each( function() {
             $( this ).click( function() {
                 if( $( this ).attr( 'id' ) == 'first-btn' ) {
@@ -62,6 +74,17 @@
                         $( '#stu-place-title' ).poshytip( 'hideDelayed', 2000 );
                         return false;
                     }
+                    //文理判断
+                    if($(".wenli" ).hasClass('hide')){
+                        wen_li_tag=0;
+                    }else{
+                        var wenli=$("input[name=wen_li]:checked" ).val();
+                        if(typeof (wenli)=="undefined"){
+                            $( '#wenli-title' ).poshytip( 'show' );
+                            $( '#wenli-title' ).poshytip( 'hideDelayed', 2000 );
+                        }
+                    }
+
                 }
                 if( $( this ).attr( 'id' ) == 'college-place-btn' ) {
                     var college_place = $( "input[name=college_place]:checked" ).val();
@@ -70,8 +93,34 @@
                         $( '#college-place-title' ).poshytip( 'hideDelayed', 2000 );
                         return false;
                     }
+
+
+
+                    //ajax
+                    var awards_code_str="";
+                    for(var i in awards_code)
+                    {
+                        if(awards_code[i]){
+                            awards_code_str+=awards_code[i]+"|";
+                        }
+                    }
+                    $.get(
+                        '<?=base_url("welcome/getSchool")?>',
+                        { 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+                        function( data ) {
+                            /*$('#baodi-table-test').DataTable( {
+                                data:data
+                            } );*/
+                            $('#baodi-table-test' ).text(data);
+                            //跳转
+
+                            //location.href='/mobile/account/index.html';
+                        },
+                        'json'
+                    );
+
                 }
-                $( this ).parents( '.content' ).addClass( 'hide' ).next( '.content' ).removeClass( 'hide' );
+                //$( this ).parents( '.content' ).addClass( 'hide' ).next( '.content' ).removeClass( 'hide' );
             } )
         } )
 
@@ -113,6 +162,14 @@
             }
             else {
                 $( this ).parent( 'label' ).next( 'span' ).removeClass( 'hide' ).find('input' ).eq(0).attr("checked","checked");
+                var select_value=$(this ).val();
+                $( this ).parent( 'label' ).next( 'span' ).removeClass( 'hide' ).find('input' ).each(function(i){
+                    var radio_value=$(this ).val();
+                    var radio_tag=$(this ).attr('data-tag');
+                    var first=radio_tag.split('|')[0];
+                    var second=radio_tag.split('|')[1];
+                    $(this ).val(select_value+first+"|"+second);
+                } ).eq(0 ).attr("checked",true);
             }
         } );
         $( ".look-more" ).click( function() {
@@ -129,36 +186,51 @@
             }
         } );
         //报考地区
-        var college_place_obj={};
+        var college_place_str="";
         $("#college-place-body input" ).change(function(){
             var tmp_obj= "";
 
             $("#college-place-body input:checked" ).each(function(i){
                 var value=$(this ).val();
                 if(value!="quanguo"){
-                    tmp_obj+=$(this ).val()+",";
+                    tmp_obj+=$(this ).val()+"|";
                 }
             });
             tmp_obj+=tmp_obj.substring(0,tmp_obj.length-1);
-            college_place_obj=tmp_obj;
-            console.info(college_place_obj);
+            college_place_str=tmp_obj;
+            console.info(college_place_str);
         })
         var score_key_value=[];
         var score=0;
         //选择文理标识
         var wen_li_tag=0;
-
+        $("input[name=wen_li]" ).change(function(){
+            wen_li_tag=$(this ).val();
+        })
+        var awards_code=[];
         $(".score-item" ).change(function(){
+            var code="";
             var score_value=0;
             var key=$(this ).attr('name');
             var value=$(this ).val();
+            var awards_type={};
             var tmp_select_arr=['other_awards_rank_one_select','other_awards_rank_two_select','other_awards_rank_three_select'];
             var tmp_select_input_arr={'other_awards_rank_one_select':"other_awards_rank_one_input",'other_awards_rank_two_select':"other_awards_rank_two_input",'other_awards_rank_three_select':"other_awards_rank_three_input"};
             if( $.inArray(key,tmp_select_arr)>=0){
                 key=tmp_select_input_arr[key];
                 if(value!=0){
-                    value=$("input[name="+key+"]:checked" ).val();
+                    code=value;
+                    value=$("input[name="+key+"]:checked" ).val().split('|')[1];
+                    code+=$("input[name="+key+"]:checked" ).attr('data-tag').split('|')[0];
+
                 }
+            }
+            if(value.match(/\|/)){
+                code=value.split('|')[0];
+                value=value.split('|')[1];
+            }
+            if(key.match(/awards/)){
+                awards_code[key]=code;
             }
             for(var i=0;i<score_key_value.length;i++){
                 if(score_key_value[i ].key==key){
@@ -167,6 +239,7 @@
                     return;
                 }
             }
+
             var tmp_obj={key:key,value:value};
             score_key_value.push(tmp_obj);
             for(var i=0;i<score_key_value.length;i++){
@@ -310,13 +383,13 @@
                     </dd>
                 </dl>
                 <dl class="dl-horizontal wenli">
-                    <dt>文理：</dt>
+                    <dt id="wenli-title">文理：</dt>
                     <dd class="stu-place bottom-line">
                         <label>
-                            <input type="radio" name="stu_style" value="Y" aria-label=""><span>文科</span>
+                            <input type="radio" name="wen_li" value="1" aria-label="1"><span>文科</span>
                         </label>
                         <label>
-                            <input type="radio" name="stu_style" value="N" aria-label=""><span>理科</span>
+                            <input type="radio" name="wen_li" value="2" aria-label="2"><span>理科</span>
                         </label>
                     </dd>
                 </dl>
@@ -337,43 +410,43 @@
                     <dt>奥赛国奖：</dt>
                     <dd>
                         <label>
-                            <select name="guo_shuxue" style="width: 150px" class="form-control score-item">
+                            <select name="awards_guo_shuxue" style="width: 150px" class="form-control score-item">
                                 <option value="0">数学无奖项</option>
-                                <option value="10">数学国家一等奖</option>
-                                <option value="7">数学国家二等奖</option>
-                                <option value="5">数学国家三等奖</option>
+                                <option value="101|10">数学国家一等奖</option>
+                                <option value="102|7">数学国家二等奖</option>
+                                <option value="103|5">数学国家三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="guo_wuli" style="width: 150px" class="form-control score-item">
+                            <select name="awards_guo_wuli" style="width: 150px" class="form-control score-item">
                                 <option value="0">物理无奖项</option>
-                                <option value="10">物理国家一等奖</option>
-                                <option value="7">物理国家二等奖</option>
-                                <option value="5">物理国家三等奖</option>
+                                <option value="301|10">物理国家一等奖</option>
+                                <option value="302|7">物理国家二等奖</option>
+                                <option value="303|5">物理国家三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="guo_huaxue" style="width: 150px" class="form-control score-item">
+                            <select name="awards_guo_huaxue" style="width: 150px" class="form-control score-item">
                                 <option value="0">化学无奖项</option>
-                                <option value="10">化学国家一等奖</option>
-                                <option value="7">化学国家二等奖</option>
-                                <option value="5">化学国家三等奖</option>
+                                <option value="701|10">化学国家一等奖</option>
+                                <option value="702|7">化学国家二等奖</option>
+                                <option value="703|5">化学国家三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="guo_shengwu" style="width: 150px" class="form-control score-item">
+                            <select name="awards_guo_shengwu" style="width: 150px" class="form-control score-item">
                                 <option value="0">生物无奖项</option>
-                                <option value="10">生物国家一等奖</option>
-                                <option value="7">生物国家二等奖</option>
-                                <option value="5">生物国家三等奖</option>
+                                <option value="501|10">生物国家一等奖</option>
+                                <option value="502|7">生物国家二等奖</option>
+                                <option value="503|5">生物国家三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="guo_xinxi" style="width: 150px" class="form-control score-item">
+                            <select name="awards_guo_xinxi" style="width: 150px" class="form-control score-item">
                                 <option value="0">信息无奖项</option>
-                                <option value="5">信息国家一等奖</option>
-                                <option value="3">信息国家二等奖</option>
-                                <option value="2">信息国家三等奖</option>
+                                <option value="901|5">信息国家一等奖</option>
+                                <option value="902|3">信息国家二等奖</option>
+                                <option value="903|1">信息国家三等奖</option>
                             </select>
                         </label>
                     </dd>
@@ -382,43 +455,43 @@
                     <dt>国联、奥赛省奖：</dt>
                     <dd class="bottom-line">
                         <label>
-                            <select name="sheng_shuxue" style="width: 150px" class="form-control score-item">
+                            <select name="awards_sheng_shuxue" style="width: 150px" class="form-control score-item">
                                 <option value="0">数学无奖项</option>
-                                <option value="5">数学省级一等奖</option>
-                                <option value="3">数学省级二等奖</option>
-                                <option value="1">数学省级三等奖</option>
+                                <option value="201|5">数学省级一等奖</option>
+                                <option value="202|3">数学省级二等奖</option>
+                                <option value="203|1">数学省级三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="sheng_wuli" style="width: 150px" class="form-control score-item">
+                            <select name="awards_sheng_wuli" style="width: 150px" class="form-control score-item">
                                 <option value="0">物理无奖项</option>
-                                <option value="5">物理省级一等奖</option>
-                                <option value="3">物理省级二等奖</option>
-                                <option value="1">物理省级三等奖</option>
+                                <option value="401|5">物理省级一等奖</option>
+                                <option value="402|3">物理省级二等奖</option>
+                                <option value="403|1">物理省级三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="sheng_huaxue" style="width: 150px" class="form-control score-item">
+                            <select name="awards_sheng_huaxue" style="width: 150px" class="form-control score-item">
                                 <option value="0">化学无奖项</option>
-                                <option value="5">化学省级一等奖</option>
-                                <option value="3">化学省级二等奖</option>
-                                <option value="1">化学省级三等奖</option>
+                                <option value="801|5">化学省级一等奖</option>
+                                <option value="802|3">化学省级二等奖</option>
+                                <option value="803|1">化学省级三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="sheng_shengwu" style="width: 150px" class="form-control score-item">
+                            <select name="awards_awards_sheng_shengwu" style="width: 150px" class="form-control score-item">
                                 <option value="0">生物无奖项</option>
-                                <option value="1">生物省级一等奖</option>
-                                <option value="2">生物省级二等奖</option>
-                                <option value="3">生物省级三等奖</option>
+                                <option value="601|5">生物省级一等奖</option>
+                                <option value="602|3">生物省级二等奖</option>
+                                <option value="603|1">生物省级三等奖</option>
                             </select>
                         </label>
                         <label>
-                            <select name="sheng_xinxi" style="widt5: 150px" class="form-control score-item">
+                            <select name="awards_sheng_xinxi" style="widt5: 150px" class="form-control score-item">
                                 <option value="0">信息无奖项</option>
-                                <option value="5">信息省级一等奖</option>
-                                <option value="3">信息省级二等奖</option>
-                                <option value="1">信息省级三等奖</option>
+                                <option value="1001|5">信息省级一等奖</option>
+                                <option value="1002|3">信息省级二等奖</option>
+                                <option value="1003|1">信息省级三等奖</option>
                             </select>
                         </label>
                     </dd>
@@ -430,30 +503,30 @@
                             <label>
                                 <select name="other_awards_rank_one_select" style="width: 225px" class="form-control other-awards score-item">
                                     <option value="0">无</option>
-                                    <option value="1">鲁迅青少年文学奖</option>
-                                    <option value="2">明天小小科学家</option>
-                                    <option value="3">全国青少年科技创新大赛</option>
-                                    <option value="4">全国中小学电脑制作活动</option>
-                                    <option value="5">创新作文大赛</option>
-                                    <option value="6">创新英语作文大赛</option>
-                                    <option value="7">“博雅杯”作文大赛</option>
-                                    <option value="8">“叶圣陶杯”作文大赛</option>
-                                    <option value="9">语文报杯作文大赛</option>
-                                    <option value="10">新概念作文大赛</option>
-                                    <option value="11">“希望杯”数学邀请赛</option>
-                                    <option value="12">航空航天模型锦标赛</option>
-                                    <option value="13">国际无人机飞行器创新大赛</option>
+                                    <option value="11">鲁迅青少年文学奖</option>
+                                    <option value="12">明天小小科学家</option>
+                                    <option value="13">全国青少年科技创新大赛</option>
+                                    <option value="14">全国中小学电脑制作活动</option>
+                                    <option value="15">创新作文大赛</option>
+                                    <option value="16">创新英语作文大赛</option>
+                                    <option value="17">“博雅杯”作文大赛</option>
+                                    <option value="18">“叶圣陶杯”作文大赛</option>
+                                    <option value="19">语文报杯作文大赛</option>
+                                    <option value="20">新概念作文大赛</option>
+                                    <option value="21">“希望杯”数学邀请赛</option>
+                                    <option value="22">航空航天模型锦标赛</option>
+                                    <option value="23">国际无人机飞行器创新大赛</option>
                                 </select>
                             </label>
                             <span class="other-awards-rank hide">
                                 <label class="stu-place">
-                                    <input class="score-item diyi" type="radio" checked name="other_awards_rank_one_input" value="7">一等奖
+                                    <input class="score-item diyi" type="radio" checked name="other_awards_rank_one_input" data-tag="01|7" value="01|7">一等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_one_input" value="5" aria-label="">二等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_one_input" data-tag="02|5" value="02|5" aria-label="">二等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_one_input" value="2" aria-label="">三等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_one_input" data-tag="03|2" value="03|2" aria-label="">三等奖
                                 </label>
                             </span>
                         </div>
@@ -461,30 +534,30 @@
                             <label>
                                 <select name="other_awards_rank_two_select" style="width: 225px" class="form-control other-awards score-item">
                                     <option value="0">无</option>
-                                    <option value="1">鲁迅青少年文学奖</option>
-                                    <option value="2">明天小小科学家</option>
-                                    <option value="3">全国青少年科技创新大赛</option>
-                                    <option value="4">全国中小学电脑制作活动</option>
-                                    <option value="5">创新作文大赛</option>
-                                    <option value="6">创新英语作文大赛</option>
-                                    <option value="7">“博雅杯”作文大赛</option>
-                                    <option value="8">“叶圣陶杯”作文大赛</option>
-                                    <option value="9">语文报杯作文大赛</option>
-                                    <option value="10">新概念作文大赛</option>
-                                    <option value="11">“希望杯”数学邀请赛</option>
-                                    <option value="12">航空航天模型锦标赛</option>
-                                    <option value="13">国际无人机飞行器创新大赛</option>
+                                    <option value="11">鲁迅青少年文学奖</option>
+                                    <option value="12">明天小小科学家</option>
+                                    <option value="13">全国青少年科技创新大赛</option>
+                                    <option value="14">全国中小学电脑制作活动</option>
+                                    <option value="15">创新作文大赛</option>
+                                    <option value="16">创新英语作文大赛</option>
+                                    <option value="17">“博雅杯”作文大赛</option>
+                                    <option value="18">“叶圣陶杯”作文大赛</option>
+                                    <option value="19">语文报杯作文大赛</option>
+                                    <option value="20">新概念作文大赛</option>
+                                    <option value="21">“希望杯”数学邀请赛</option>
+                                    <option value="22">航空航天模型锦标赛</option>
+                                    <option value="23">国际无人机飞行器创新大赛</option>
                                 </select>
                             </label>
                             <span class="other-awards-rank hide">
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" checked name="other_awards_rank_two_input" value="7" aria-label="">一等奖
+                                    <input class="score-item diyi" type="radio" checked name="other_awards_rank_two_input" data-tag="01|7" value="01|7">一等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_two_input" value="5" aria-label="">二等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_two_input" data-tag="02|5" value="02|5" aria-label="">二等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_two_input" value="2" aria-label="">三等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_two_input" data-tag="03|2" value="03|2" aria-label="">三等奖
                                 </label>
                             </span>
                         </div>
@@ -492,30 +565,30 @@
                             <label>
                                 <select name="other_awards_rank_three_select" style="width: 225px" class="form-control other-awards score-item">
                                     <option value="0">无</option>
-                                    <option value="1">鲁迅青少年文学奖</option>
-                                    <option value="2">明天小小科学家</option>
-                                    <option value="3">全国青少年科技创新大赛</option>
-                                    <option value="4">全国中小学电脑制作活动</option>
-                                    <option value="5">创新作文大赛</option>
-                                    <option value="6">创新英语作文大赛</option>
-                                    <option value="7">“博雅杯”作文大赛</option>
-                                    <option value="8">“叶圣陶杯”作文大赛</option>
-                                    <option value="9">语文报杯作文大赛</option>
-                                    <option value="10">新概念作文大赛</option>
-                                    <option value="11">“希望杯”数学邀请赛</option>
-                                    <option value="12">航空航天模型锦标赛</option>
-                                    <option value="13">国际无人机飞行器创新大赛</option>
+                                    <option value="11">鲁迅青少年文学奖</option>
+                                    <option value="12">明天小小科学家</option>
+                                    <option value="13">全国青少年科技创新大赛</option>
+                                    <option value="14">全国中小学电脑制作活动</option>
+                                    <option value="15">创新作文大赛</option>
+                                    <option value="16">创新英语作文大赛</option>
+                                    <option value="17">“博雅杯”作文大赛</option>
+                                    <option value="18">“叶圣陶杯”作文大赛</option>
+                                    <option value="19">语文报杯作文大赛</option>
+                                    <option value="20">新概念作文大赛</option>
+                                    <option value="21">“希望杯”数学邀请赛</option>
+                                    <option value="22">航空航天模型锦标赛</option>
+                                    <option value="23">国际无人机飞行器创新大赛</option>
                                 </select>
                             </label>
                             <span class="other-awards-rank hide">
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" checked name="other_awards_rank_three_input" value="7">一等奖
+                                    <input class="score-item diyi" type="radio" checked name="other_awards_rank_three_input" data-tag="01|7" value="01|7">一等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_three_input" value="5">二等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_three_input" data-tag="02|5" value="02|5" aria-label="">二等奖
                                 </label>
                                 <label class="stu-place">
-                                    <input class="score-item" type="radio" name="other_awards_rank_three_input" value="2">三等奖
+                                    <input class="score-item" type="radio" name="other_awards_rank_three_input" data-tag="03|2" value="03|2" aria-label="">三等奖
                                 </label>
                             </span>
                         </div>
@@ -586,68 +659,68 @@
                     <dt id="college-place-title" data-tipso="报考地区必选">报考地区：</dt>
                     <dd id="college-place-body" class="stu-place">
                         <label>
-                            <input type="checkbox" name="college_place[]" value="quanguo" aria-label="">全国
+                            <input type="checkbox" name="college_place" value="quanguo" aria-label="">全国
                         </label>
                         <br/>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="110000" aria-label="">北京
+                            <input type="checkbox" name="college_place" value="110000" aria-label="">北京
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="310000">上海
+                            <input type="checkbox" name="college_place" value="310000">上海
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="320000">江苏
+                            <input type="checkbox" name="college_place" value="320000">江苏
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="330000">浙江
+                            <input type="checkbox" name="college_place" value="330000">浙江
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="120000" aria-label="">天津
+                            <input type="checkbox" name="college_place" value="120000" aria-label="">天津
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="440000" aria-label="">广东
+                            <input type="checkbox" name="college_place" value="440000" aria-label="">广东
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="420000" aria-label="">湖北
+                            <input type="checkbox" name="college_place" value="420000" aria-label="">湖北
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="430000" aria-label="">湖南
+                            <input type="checkbox" name="college_place" value="430000" aria-label="">湖南
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="610000" aria-label="">陕西
+                            <input type="checkbox" name="college_place" value="610000" aria-label="">陕西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="510000" aria-label="">四川
+                            <input type="checkbox" name="college_place" value="510000" aria-label="">四川
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="500000" aria-label="">重庆
+                            <input type="checkbox" name="college_place" value="500000" aria-label="">重庆
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="540000" aria-label="">西藏
+                            <input type="checkbox" name="college_place" value="540000" aria-label="">西藏
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="450000" aria-label="">广西
+                            <input type="checkbox" name="college_place" value="450000" aria-label="">广西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="350000" aria-label="">福建
+                            <input type="checkbox" name="college_place" value="350000" aria-label="">福建
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="340000" aria-label="">安徽
+                            <input type="checkbox" name="college_place" value="340000" aria-label="">安徽
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="370000" aria-label="">山东
+                            <input type="checkbox" name="college_place" value="370000" aria-label="">山东
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="230000" aria-label="">黑龙江
+                            <input type="checkbox" name="college_place" value="230000" aria-label="">黑龙江
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="210000" aria-label="">辽宁
+                            <input type="checkbox" name="college_place" value="210000" aria-label="">辽宁
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="140000" aria-label="">山西
+                            <input type="checkbox" name="college_place" value="140000" aria-label="">山西
                         </label>
                         <label>
-                            <input type="checkbox" name="college_place[]" value="620000" aria-label="">甘肃
+                            <input type="checkbox" name="college_place" value="620000" aria-label="">甘肃
                         </label>
                     </dd>
                 </dl>
@@ -762,7 +835,30 @@
                 <dl class="dl-horizontal">
                     <dt style="padding-top: 10px">保底学校：</dt>
                     <dd class="bottom-line">
-                        <table class="table table-striped">
+                        <table id="baodi-table-test" class="table" width="100%">
+                            <thead>
+                            <tr>
+                                <th>学校</th>
+                                <th>定位</th>
+                                <th>所在地</th>
+                                <th>专业1</th>
+                                <th>专业2</th>
+                                <th>专业3</th>
+                                <th>全部专业</th>
+                            </tr>
+                            </thead>
+                            <!--<tfoot>
+                            <tr>
+                                <th>Name</th>
+                                <th>Position</th>
+                                <th>Office</th>
+                                <th>Extn.</th>
+                                <th>Start date</th>
+                                <th>Salary</th>
+                            </tr>
+                            </tfoot>-->
+                        </table>
+                        <!--<table class="table table-striped">
                             <thead>
                             <tr>
                                 <th>学校</th>
@@ -794,7 +890,7 @@
                                 <td><span class="look-more">查看</span></td>
                             </tr>
                             </tbody>
-                        </table>
+                        </table>-->
                     </dd>
                 </dl>
             </div>
