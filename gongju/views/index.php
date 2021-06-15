@@ -11,6 +11,7 @@
     <script src="<?=base_url('res/web/js/json2.js')?>"></script>
     <script src="<?=base_url('res/web/js/jquery.poshytip.js')?>"></script>
     <script src="<?=base_url('res/web/js/jquery.dataTables.min.js')?>"></script>
+    <script src="<?=base_url('res/web/src/bootstrap-table.js')?>"></script>
 
 </head>
 <style>
@@ -94,36 +95,175 @@
                         return false;
                     }
 
-
-
-                    //ajax
-                    var awards_code_str="";
-                    for(var i in awards_code)
-                    {
-                        if(awards_code[i]){
-                            awards_code_str+=awards_code[i]+"|";
-                        }
-                    }
-                    $.get(
-                        '<?=base_url("welcome/getSchool")?>',
-                        { 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
-                        function( data ) {
-                            /*$('#baodi-table-test').DataTable( {
-                                data:data
-                            } );*/
-                            $('#baodi-table-test' ).text(data);
-                            //跳转
-
-                            //location.href='/mobile/account/index.html';
-                        },
-                        'json'
-                    );
-
+                    getData();
                 }
                 //$( this ).parents( '.content' ).addClass( 'hide' ).next( '.content' ).removeClass( 'hide' );
             } )
         } )
+        $("input[name=baogao_style]" ).change(function(){
+            getData();
+        })
+        function getData(){
+            var score=0;
+            var baogao_style=$("input[name=baogao_style]:checked" ).val();
 
+            for(var i=0;i<score_key_value.length;i++){
+                score+=parseInt(score_key_value[i ].value);
+            }
+            var lunwen_val=$("input[name=stu_lunwen_count]:checked" ).val();
+            var zhuanli_val=$("input[name=stu_zhuanli_count]:checked" ).val();
+            var tet=lunwen_val+"----------"+zhuanli_val;
+            console.info(tet);
+            if(baogao_style=="xiaoshou"){
+                if(lunwen_val!="0")lunwen_val=lunwen_val.split('|')[0];
+                if(zhuanli_val!="0")zhuanli_val=zhuanli_val.split('|')[0];
+            }else if(baogao_style=="guwen"){
+                if(lunwen_val!="0")lunwen_val=lunwen_val.split('|')[1];
+                if(zhuanli_val!="0")zhuanli_val=zhuanli_val.split('|')[1];
+            }
+            score+=parseInt(lunwen_val);
+            score+=parseInt(zhuanli_val);
+
+            var awards_code_str="";
+            for(var i in awards_code)
+            {
+                if(awards_code[i]){
+                    awards_code_str+=awards_code[i]+"|";
+                }
+            }
+            $.get('<?=base_url("welcome/getBaodiSchool")?>',{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},function(data){
+                makeList('.baodi-table',data);
+            },'json');
+            $.get('<?=base_url("welcome/getTuijianSchool")?>',{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},function(data){
+                makeList('.tuijian-table',data);
+            },'json');
+            $.get('<?=base_url("welcome/getChongciSchool")?>',{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},function(data){
+                makeList('.chongci-table',data);
+            },'json');
+            function makeList(dom,data){
+                var str="";
+                for(var i=0;i<data.length;i++){
+                    str+="<tr>";
+                    str+="<td class='select-school-name'>"+data[i ].school_name+"</td>";
+                    str+="<td class='select-school-dingwei'>"+data[i ].school_level+"</td>";
+                    str+="<td class='select-school-place'>"+data[i ].province_name+"</td>";
+                    str+="<td>"+data[i ].specialty_name0+"</td>";
+                    str+="<td>"+data[i ].specialty_name1+"</td>";
+                    str+="<td>"+data[i ].specialty_name2+"</td>";
+                    str+="<td><span class='look-more' data-tag='"+data[i ].major_list+"'>查看</span></td>";
+                    str+="</tr>";
+                }
+                if(data.length==0){
+                    str+="<td style='color:red' class='text-center' colspan='7'>暂无数据</td>";
+                }
+                str+="</tr>";
+
+                $(dom+" tbody" ).html("").append(str);
+                $( ".look-more" ).on('click', function() {
+                    var name = $( this ).parents( 'td' ).siblings( '.select-school-name' ).text();
+                    var dingwei = $( this ).parents( 'td' ).siblings( '.select-school-dingwei' ).text();
+                    var place = $( this ).parents( 'td' ).siblings( '.select-school-place' ).text();
+                    $( "#myModalLabel" ).text( name + "," + dingwei + "," + place );
+                    if($(this ).attr('data-tag')!=""){
+                        $( "#modal-body" ).text( $(this ).attr('data-tag'));
+                    }else{
+                        $( "#modal-body" ).text( '暂无数据');
+                    }
+
+                    $( "#zhuanye-modal" ).modal( 'show' );
+                } );
+            }
+            /*$('.baodi-table').bootstrapTable({
+                striped: true, // 隔行加亮
+                pagination: true, // 开启分页功能
+                showrefresh: true,
+                showpaginationswitch: true,
+                idfield: "id",
+                pageSize: 10,
+                pageNumber: 1,
+                cache:false,
+                sidepagination: "server", //服务端请求
+                contentType: "application/x-www-form-urlencoded",
+                queryParamsType: "limit",
+                showrefresh: true,
+                url: '<?=base_url("welcome/getBaodiSchool")?>',
+                queryParams:{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+            });*/
+            /*$('.tuijian-table').bootstrapTable({
+                showrefresh: true,
+                url: '<?=base_url("welcome/getTuijianSchool")?>',
+                queryParams:{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+            });
+            $('.chongci-table').bootstrapTable({
+                showrefresh: true,
+                url: '<?=base_url("welcome/getChongciSchool")?>',
+                queryParams:{ 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+            });*/
+
+            /*$('.baodi-table').dataTable( {
+                "retrieve":true,
+                "destroy":true,
+                "searching": false,
+                "paging":   true,
+                "ordering": false,
+                "info":     false,
+                "ajax": {
+                    "url": '<?=base_url("welcome/getBaodiSchool")?>',
+                    "data": { 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+                },
+                "columns": [
+                    { "data": "school_name" },
+                    { "data": "school_level" },
+                    { "data": "province_name" },
+                    { "data": "specialty_name" },
+                    { "data": "specialty_name1" },
+                    { "data": "specialty_name2" },
+                    { "data": "major_list" }
+                ]
+            } );
+            $('.tuijian-table').dataTable( {
+                "retrieve":true,
+                "destroy":true,
+                "searching": false,
+                "paging":   false,
+                "ordering": false,
+                "info":     false,
+                "ajax": {
+                    "url": '<?=base_url("welcome/getTuijianSchool")?>',
+                    "data": { 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+                },
+                "columns": [
+                    { "data": "school_name" },
+                    { "data": "school_level" },
+                    { "data": "province_name" },
+                    { "data": "specialty_name" },
+                    { "data": "specialty_name1" },
+                    { "data": "specialty_name2" },
+                    { "data": "major_list" }
+                ]
+            } );
+            $('.chongci-table').dataTable( {
+                "retrieve":true,
+                "destroy":true,
+                "searching": false,
+                "paging":   false,
+                "ordering": false,
+                "info":     false,
+                "ajax": {
+                    "url": '<?=base_url("welcome/getChongciSchool")?>',
+                    "data": { 'score': score, 'awards_code':awards_code_str.substring(0,awards_code_str.length-1),'college_place':college_place_str,'wen_li':wen_li_tag},
+                },
+                "columns": [
+                    { "data": "school_name" },
+                    { "data": "school_level" },
+                    { "data": "province_name" },
+                    { "data": "specialty_name" },
+                    { "data": "specialty_name1" },
+                    { "data": "specialty_name2" },
+                    { "data": "major_list" }
+                ]
+            } );*/
+        }
         $( ".pre-btn" ).each( function() {
             $( this ).click( function() {
                 $( this ).parents( '.content' ).addClass( 'hide' ).prev( '.content' ).removeClass( 'hide' );
@@ -172,7 +312,8 @@
                 } ).eq(0 ).attr("checked",true);
             }
         } );
-        $( ".look-more" ).click( function() {
+        $( ".look-more" ).on('click', function() {
+            alert()
             var name = $( this ).parents( 'td' ).siblings( '.select-school-name' ).text();
             var dingwei = $( this ).parents( 'td' ).siblings( '.select-school-dingwei' ).text();
             var place = $( this ).parents( 'td' ).siblings( '.select-school-place' ).text();
@@ -201,7 +342,6 @@
             console.info(college_place_str);
         })
         var score_key_value=[];
-        var score=0;
         //选择文理标识
         var wen_li_tag=0;
         $("input[name=wen_li]" ).change(function(){
@@ -210,7 +350,7 @@
         var awards_code=[];
         $(".score-item" ).change(function(){
             var code="";
-            var score_value=0;
+            //var score_value=0;
             var key=$(this ).attr('name');
             var value=$(this ).val();
             var awards_type={};
@@ -242,13 +382,13 @@
 
             var tmp_obj={key:key,value:value};
             score_key_value.push(tmp_obj);
-            for(var i=0;i<score_key_value.length;i++){
+            /*for(var i=0;i<score_key_value.length;i++){
                 console.info(score_key_value[i ].value)
                 score_value+=parseInt(score_key_value[i ].value);
-            }
-            score=score_value;
+            }*/
+            //score=score_value;
             console.info(score_key_value);
-            console.info(score);
+            //console.info(score);
         });
 
     } )
@@ -602,19 +742,19 @@
                             <input type="radio" checked name="stu_lunwen_count" value="0" aria-label="">0篇
                         </label>
                         <label>
-                            <input type="radio" name="stu_lunwen_count" value="1" aria-label="">1篇
+                            <input type="radio" name="stu_lunwen_count" value="3|1" aria-label="">1篇
                         </label>
                         <label>
-                            <input type="radio" name="stu_lunwen_count" value="2" aria-label="">2篇
+                            <input type="radio" name="stu_lunwen_count" value="3|1" aria-label="">2篇
                         </label>
                         <label>
-                            <input type="radio" name="stu_lunwen_count" value="3" aria-label="">3篇
+                            <input type="radio" name="stu_lunwen_count" value="3|1" aria-label="">3篇
                         </label>
                         <label>
-                            <input type="radio" name="stu_lunwen_count" value="4" aria-label="">4篇
+                            <input type="radio" name="stu_lunwen_count" value="3|1" aria-label="">4篇
                         </label>
                         <label>
-                            <input type="radio" name="stu_lunwen_count" value="5" aria-label="">5篇及以上
+                            <input type="radio" name="stu_lunwen_count" value="3|1" aria-label="">5篇及以上
                         </label>
                     </dd>
                 </dl>
@@ -625,13 +765,13 @@
                             <input type="radio" checked name="stu_zhuanli_count" value="0" aria-label="">0个
                         </label>
                         <label>
-                            <input type="radio" name="stu_zhuanli_count" value="1" aria-label="">1个
+                            <input type="radio" name="stu_zhuanli_count" value="5|3" aria-label="">1个
                         </label>
                         <label>
-                            <input type="radio" name="stu_zhuanli_count" value="2" aria-label="">2个
+                            <input type="radio" name="stu_zhuanli_count" value="5|3" aria-label="">2个
                         </label>
                         <label>
-                            <input type="radio" name="stu_zhuanli_count" value="3" aria-label="">3个及以上
+                            <input type="radio" name="stu_zhuanli_count" value="5|3" aria-label="">3个及以上
                         </label>
                     </dd>
                 </dl>
@@ -749,114 +889,67 @@
                     <dt>报告结果：</dt>
                     <dd class="stu-place">
                         <label>
-                            <input type="radio" checked name="stu_lunwen_count" value="0" aria-label="">销售用
+                            <input type="radio" checked name="baogao_style" value="xiaoshou" aria-label="">销售用
                         </label>
                         <label style="margin-left: 20%;">
-                            <input type="radio" name="stu_lunwen_count" value="1" aria-label="">顾问用
+                            <input type="radio" name="baogao_style" value="guwen" aria-label="">顾问用
                         </label>
                     </dd>
                 </dl>
                 <dl class="dl-horizontal">
                     <dt style="padding-top: 10px">冲刺学校：</dt>
-                    <dd class="bottom-line">
-                        <table class="table table-striped">
+                    <dd>
+                        <table class="chongci-table" class="table" width="100%">
                             <thead>
                             <tr>
-                                <th>学校</th>
-                                <th>定位</th>
-                                <th>所在地</th>
-                                <th>专业1</th>
-                                <th>专业2</th>
-                                <th>专业3</th>
-                                <th>全部专业</th>
+                                <th data-field="school_name">学校</th>
+                                <th data-field="school_level">定位</th>
+                                <th data-field="province_name">所在地</th>
+                                <th data-field="specialty_name">专业1</th>
+                                <th data-field="specialty_name1">专业2</th>
+                                <th data-field="specialty_name">专业3</th>
+                                <th data-field="major_list">全部专业</th>
                             </tr>
                             </thead>
-                            <tbody>
-                            <tr>
-                                <td class="select-school-name">北京大学</td>
-                                <td class="select-school-dingwei">211</td>
-                                <td class="select-school-place">北京</td>
-                                <td>物理</td>
-                                <td>化学</td>
-                                <td>数学</td>
-                                <td><span class="look-more">查看</span></td>
-                            </tr>
-                            <tr>
-                                <td class="select-school-name">清华大学</td>
-                                <td class="select-school-dingwei">211</td>
-                                <td class="select-school-place">北京</td>
-                                <td>物理</td>
-                                <td>化学</td>
-                                <td>数学</td>
-                                <td><span class="look-more">查看</span></td>
-                            </tr>
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </dd>
                 </dl>
                 <dl class="dl-horizontal">
                     <dt style="padding-top: 10px">推荐学校：</dt>
-                    <dd class="bottom-line">
-                        <table class="table table-striped">
+                    <dd>
+                        <table class="tuijian-table" class="table" width="100%">
                             <thead>
                             <tr>
-                                <th>学校</th>
-                                <th>定位</th>
-                                <th>所在地</th>
-                                <th>专业1</th>
-                                <th>专业2</th>
-                                <th>专业3</th>
-                                <th>全部专业</th>
+                                <th data-field="school_name">学校</th>
+                                <th data-field="school_level">定位</th>
+                                <th data-field="province_name">所在地</th>
+                                <th data-field="specialty_name">专业1</th>
+                                <th data-field="specialty_name1">专业2</th>
+                                <th data-field="specialty_name">专业3</th>
+                                <th data-field="major_list">全部专业</th>
                             </tr>
                             </thead>
-                            <tbody>
-                            <tr>
-                                <td class="select-school-name">北京大学</td>
-                                <td class="select-school-dingwei">211</td>
-                                <td class="select-school-place">北京</td>
-                                <td>物理</td>
-                                <td>化学</td>
-                                <td>数学</td>
-                                <td><span class="look-more">查看</span></td>
-                            </tr>
-                            <tr>
-                                <td class="select-school-name">清华大学</td>
-                                <td class="select-school-dingwei">211</td>
-                                <td class="select-school-place">北京</td>
-                                <td>物理</td>
-                                <td>化学</td>
-                                <td>数学</td>
-                                <td><span class="look-more">查看</span></td>
-                            </tr>
-                            </tbody>
+                            <tbody></tbody>
                         </table>
                     </dd>
                 </dl>
                 <dl class="dl-horizontal">
                     <dt style="padding-top: 10px">保底学校：</dt>
-                    <dd class="bottom-line">
-                        <table id="baodi-table-test" class="table" width="100%">
+                    <dd>
+                        <table class="baodi-table" class="table" width="100%">
                             <thead>
                             <tr>
-                                <th>学校</th>
-                                <th>定位</th>
-                                <th>所在地</th>
-                                <th>专业1</th>
-                                <th>专业2</th>
-                                <th>专业3</th>
-                                <th>全部专业</th>
+                                <th data-field="school_name">学校</th>
+                                <th data-field="school_level">定位</th>
+                                <th data-field="province_name">所在地</th>
+                                <th data-field="specialty_name">专业1</th>
+                                <th data-field="specialty_name1">专业2</th>
+                                <th data-field="specialty_name">专业3</th>
+                                <th data-field="major_list">全部专业</th>
                             </tr>
                             </thead>
-                            <!--<tfoot>
-                            <tr>
-                                <th>Name</th>
-                                <th>Position</th>
-                                <th>Office</th>
-                                <th>Extn.</th>
-                                <th>Start date</th>
-                                <th>Salary</th>
-                            </tr>
-                            </tfoot>-->
+                            <tbody></tbody>
                         </table>
                         <!--<table class="table table-striped">
                             <thead>
